@@ -1,35 +1,56 @@
 # ModDock Server Manager
 
-**ModDock** is an open-source game server management tool designed to simplify the setup, configuration, and mod handling for dedicated servers — starting with ARMA 3 Docker support.
+🛠️ **Game Server Mod & Config Manager for Docker-based Game Servers**
 
-## 🌟 Features (as of v0.3.0)
+ModDock is an open-source desktop tool designed to streamline the setup, configuration, and modding of **Docker-based game servers**, starting with support for **ARMA 3**.
 
-- 🔄 Switch between **Simple** and **Advanced** UI modes
-- 🎮 Add single or multiple Steam Workshop mods via ID or collection
-- 📦 Automatically manage mod folders and metadata
-- 📁 Per-profile folder structure (`mods/`, `profiles/`, etc.)
-- 🔍 Auto-detect and rebuild `installed_mods.json` if missing
-- 🧩 Docker-compose and ARMA config editing (coming next in v0.4.0)
+It helps you manage mods from the Steam Workshop, configure server settings, and maintain profiles — all from a clean, modern GUI.
 
-## 🗺️ Roadmap (Upcoming)
+---
 
-- ⚙️ Full server config editor (`server.cfg`, `basic.cfg`)
-- 🐳 Docker compose editor tab
-- 📚 Steam collection import (full)
-- 🎨 Game profile-driven UI (ARMA, Valheim, Palworld, more)
-- 🔒 Plugin-based support for extending to other games
-- 🧠 Preset templates, backup system, and mod conflict detection
+## 🐳 Built for Docker-powered game hosting
+
+Whether you're self-hosting or managing a community server, ModDock automates the busywork so you can get back to playing.
+
+> This is an **alpha release (v0.3.0-alpha)** and not yet ready for production use. Expect frequent changes.
+
+---
+
+## ✨ Features (v0.3.0-alpha)
+
+- 🔀 Toggle between **Simple** and **Advanced** interface modes
+- 📦 Add Steam Workshop mods (single or multiple IDs)
+- 🔍 Fetch mod names from Steam automatically
+- 📁 Organized folder structure for mods and profiles
+- 🔄 Auto-generate `installed_mods.json` if missing
+- 🧠 Remembers previously used mode and layout
+- 🛢️ Designed specifically for Docker-based game server setups
+- 📌 Paths and resources work in both `.py` and `.exe` modes
+
+---
+
+## 🚧 Roadmap / Coming Soon
+
+- ⚙️ Edit `server.cfg` settings from a simplified form or raw view
+- 🐳 Edit and manage `docker-compose.yml` from within the app
+- 📚 Full Steam Collection mod import
+- 🧩 Game profile system with custom UI per game (ARMA 3, Palworld, Valheim, etc.)
+- 🧠 Save/load config presets
+- 🧪 Plugin support for future games
+
+---
 
 ## 📝 License
 
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)** — see the [LICENSE](./LICENSE) file for full terms.
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)** — see the [LICENSE](./LICENSE) file.
 
 ### 💼 Commercial Use
 
-If you want to use ModDock in a **commercial or closed-source** project, you must request a commercial license.
+Use in **closed-source or commercial projects** requires a separate license.  
+See [LICENSE-EXCEPTIONS.md](./LICENSE-EXCEPTIONS.md) or contact **CaptainNemos** on GitHub.
 
-See [LICENSE-EXCEPTIONS.md](./LICENSE-EXCEPTIONS.md) or contact **CaptainNemos** at [your GitHub/email].
+---
 
-## 🧠 Author
+## 🙌 Author
 
-Made with ❤️ by **CaptainNemos**
+Developed and maintained by [**CaptainNemos**](https://github.com/CaptainNemos)
