@@ -1,0 +1,17 @@
+{
+  "name": "ARMA 3",
+  "app_id": "107410",
+  "docker_image": "ghcr.io/brettmayson/arma3server/arma3server:latest",
+  "mod_folder": "mods/",
+  "config_file": "server.cfg",
+  "compose_env": [
+    "STEAM_USER",
+    "STEAM_PASSWORD",
+    "HOSTNAME",
+    "PORT",
+    "ARMA_PARAMS",
+    "MISSION"
+  ],
+  "mod_type": "steam",
+  "supports_collections": true
+}
