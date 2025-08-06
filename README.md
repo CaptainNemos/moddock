@@ -1,74 +1,35 @@
+# ModDock Server Manager
 
-# 🎮 ModDock Server Manager
+**ModDock** is an open-source game server management tool designed to simplify the setup, configuration, and mod handling for dedicated servers — starting with ARMA 3 Docker support.
 
-**ModDock** is a universal game server manager and mod downloader focused on simplicity, automation, and flexibility — starting with full support for **ARMA 3 Docker servers**. It enables quick and advanced configuration of game servers with mod support, Docker integration, and Steam Workshop utilities.
+## 🌟 Features (as of v0.3.0)
 
----
+- 🔄 Switch between **Simple** and **Advanced** UI modes
+- 🎮 Add single or multiple Steam Workshop mods via ID or collection
+- 📦 Automatically manage mod folders and metadata
+- 📁 Per-profile folder structure (`mods/`, `profiles/`, etc.)
+- 🔍 Auto-detect and rebuild `installed_mods.json` if missing
+- 🧩 Docker-compose and ARMA config editing (coming next in v0.4.0)
 
-## ✅ Current Features
+## 🗺️ Roadmap (Upcoming)
 
-### 🧩 Core Functionality
-- [x] GUI to manage **ARMA 3 Docker server**
-- [x] Add/remove Steam Workshop mods (single or bulk)
-- [x] Steam **collection support** (auto-extracts mod IDs)
-- [x] Fetch and display **mod names** from Steam
-- [x] Profile system (create/save/load per game)
-- [x] Configurable **Docker Compose** setup
-- [x] Launch/start server via Docker
-- [x] **Simple and Advanced UI modes**
-- [x] Remembers last-used UI mode and profile
+- ⚙️ Full server config editor (`server.cfg`, `basic.cfg`)
+- 🐳 Docker compose editor tab
+- 📚 Steam collection import (full)
+- 🎨 Game profile-driven UI (ARMA, Valheim, Palworld, more)
+- 🔒 Plugin-based support for extending to other games
+- 🧠 Preset templates, backup system, and mod conflict detection
 
-### 🧠 Smart Integration
-- [x] Auto-generates folder structure (`mods/`, `profiles/`, `media/`)
-- [x] Auto-creates `installed_mods.json` and starter profile if missing
-- [x] Loads mod names and status from local disk
-- [x] Parses `server.cfg` into a friendly form UI (Simple Mode)
-- [x] Supports raw `server.cfg` + Docker config editing (Advanced Mode)
-- [x] Automatically refreshes mod list after downloading
-- [x] Packaged as a **standalone .exe** via PyInstaller
-- [x] Integrated logo, icon, and paths for portable execution
+## 📝 License
 
----
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)** — see the [LICENSE](./LICENSE) file for full terms.
 
-## 🛠️ Planned Features
+### 💼 Commercial Use
 
-### 🔜 Phase 4 (Complete ARMA 3 Integration)
-- [ ] Finalize Steam **collection session reuse** (single login)
-- [ ] Add **collection tags** for mod grouping
-- [ ] Better UI labeling and error handling
-- [ ] Logs tab to show Docker output & mod install logs
-- [ ] Add/remove mission presets via UI
-- [ ] Validate `server.cfg` and display errors
-- [ ] Save and reuse downloaded mods across profiles
+If you want to use ModDock in a **commercial or closed-source** project, you must request a commercial license.
 
-### 🌍 Phase 5 (Multi-game Plugin System)
-- [ ] Profile-specific UI & logic for other games (Valheim, Palworld, etc.)
-- [ ] Plugin templates for server.cfg variants
-- [ ] Centralized mod cache across game servers
-- [ ] Downloadable plugins/configs from community/GitHub
-- [ ] Custom container templates per game
+See [LICENSE-EXCEPTIONS.md](./LICENSE-EXCEPTIONS.md) or contact **CaptainNemos** at [your GitHub/email].
 
----
+## 🧠 Author
 
-## 🚀 Get Started
-
-1. Download the latest `moddock.exe` from Releases
-2. Run it (first launch creates folders/configs)
-3. Add your ARMA 3 mods or Steam collections
-4. Edit settings and launch your Docker server!
-
----
-
-## 🤝 Contributing
-
-ModDock is open source under the **MIT License**. Contributions and feature requests welcome!
-
-- GitHub: [github.com/CaptainNemos/moddock](https://github.com/CaptainNemos/moddock)
-
----
-
-## 🧑‍💻 Author
-
-Created by **CaptainNemos**  
-Logo, UX and engineering by CaptainNemos + GPT-4
-
+Made with ❤️ by **CaptainNemos**
