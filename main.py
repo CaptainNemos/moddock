@@ -1,18 +1,22 @@
-# Ensures imports work both in PyInstaller and when running from source.
 import os, sys
+sys.path.insert(0, os.path.dirname(__file__))  # ensure local packages are importable
 
-# When running as a script from the moddock folder, make this dir importable
-sys.path.append(os.path.dirname(__file__))
-
-# When frozen by PyInstaller, ensure the temp bundle path is visible
-if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-    sys.path.append(sys._MEIPASS)
-
-from ui.app import ModDockApp
+from tkinter import Tk
+from data import config_repo
+from ui.app import ModDockApp as App  # App is a tk.Frame
 
 def main():
-    app = ModDockApp()
-    app.mainloop()
+    root = Tk()
+    root.title("ModDock Server Manager")
+
+    # Load mods from single config
+    mods = config_repo.get_mods()
+
+    # Mount the app frame
+    app = App(root, mods)
+    app.pack(fill="both", expand=True)
+
+    root.mainloop()
 
 if __name__ == "__main__":
     main()

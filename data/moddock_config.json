@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "last_view": "simple",
+    "steam_user": "",
+    "steam_password_enc": ""
+  },
+  "mods": [
+    {
+      "id": "450814997",
+      "name": "CBA_A3",
+      "status": "downloaded",
+      "enabled": true,
+      "updated": 1723135120
+    }
+  ]
+}

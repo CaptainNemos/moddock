@@ -1,3 +1,4 @@
 Pillow
 requests
 PyYAML>=6.0
+keyring

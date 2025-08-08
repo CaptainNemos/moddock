@@ -1,57 +1,68 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-import os
-from data.paths import base_path, ensure_structure
-from data import settings_repo, mods_repo
-from services import docker_service
-from .tabs_simple import SimpleTab
-from .tabs_advanced import AdvancedTab
+from tkinter import ttk
+from ui.tabs_simple_mods import ModsTab
+from ui.tabs_simple_servercfg import ServerCfgTab
+from ui.tabs_simple_docker import DockerTab
+from ui.tabs_advanced import AdvancedTab
+from data import config_repo
 
-class ModDockApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("ModDock Server Manager")
-        self.geometry("900x650")
+class ModDockApp(tk.Frame):
+    def __init__(self, master, mods):
+        super().__init__(master)
+        self.master = master
+        self.mods = mods
+        self.current_view = tk.StringVar(value=config_repo.get_setting("last_view", "simple"))
+        self._build()
 
-        ensure_structure()
+    def _build(self):
+        toggle_frame = tk.Frame(self)
+        toggle_frame.pack(fill="x", pady=4)
+        tk.Button(toggle_frame, text="Simple", command=lambda: self._switch_view("simple")).pack(side="left", padx=2)
+        tk.Button(toggle_frame, text="Advanced", command=lambda: self._switch_view("advanced")).pack(side="left", padx=2)
 
-        self.settings = settings_repo.load()
-        self.simple_mode = tk.BooleanVar(value=self.settings.get("simple_mode", True))
-        self.mods = mods_repo.load()
+        self.content_frame = tk.Frame(self)
+        self.content_frame.pack(fill="both", expand=True)
+        self._switch_view(self.current_view.get())  # load saved view
 
-        self._build_ui()
+    def _switch_view(self, view):
+        self.current_view.set(view)
+        config_repo.set_setting("last_view", view)   # save to config
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+        if view == "simple":
+            self._build_simple_view()
+        else:
+            self._build_advanced_view()
 
-    def _build_ui(self):
-        mode_frame = tk.Frame(self)
-        mode_frame.pack(anchor="ne", pady=5, padx=5)
-        tk.Checkbutton(mode_frame, text="Simple Mode",
-                       variable=self.simple_mode, command=self._toggle_mode).pack(side="right")
+    def _build_simple_view(self):
+        nb = ttk.Notebook(self.content_frame)
+        nb.pack(fill="both", expand=True)
 
-        self.tabs = ttk.Notebook(self)
-        self.tabs.pack(expand=True, fill="both")
+        nb.add(ModsTab(nb, self.mods, self._compose_action), text="Mods")
+        nb.add(ServerCfgTab(nb), text="Server Config")
+        nb.add(DockerTab(nb, self._compose_action), text="Docker Control")
 
-        self.simple_tab = SimpleTab(self, on_compose_action=self._compose_action)
-        self.advanced_tab = AdvancedTab(self)
-
-        self.tabs.add(self.simple_tab, text="Simple")
-        self.tabs.add(self.advanced_tab, text="Advanced")
-        self._toggle_mode()
-
-    def _toggle_mode(self):
-        self.tabs.select(self.simple_tab if self.simple_mode.get() else self.advanced_tab)
-        self.settings["simple_mode"] = self.simple_mode.get()
-        settings_repo.save(self.settings)
+    def _build_advanced_view(self):
+        AdvancedTab(self.content_frame).pack(fill="both", expand=True)
 
     def _compose_action(self, action: str):
         from data.paths import base_path
         from services import docker_service
-        fn = {"start": docker_service.start, "stop": docker_service.stop, "restart": docker_service.restart}.get(action)
-        if not fn: 
+        fn = {
+            "start": docker_service.start,
+            "stop": docker_service.stop,
+            "restart": docker_service.restart,
+        }.get(action)
+        if not fn:
             return
-        rc = fn(cwd=base_path())  # run compose inside the app folder (where docker-compose.yml lives)
+
+        rc = fn(cwd=base_path())  # run compose inside the app folder
+        from tkinter import messagebox
         if rc != 0:
-            from tkinter import messagebox
-            messagebox.showerror("Docker", f"{action.title()} failed. Check Docker Desktop and docker-compose.yml.")
+            messagebox.showerror(
+                "Docker",
+                f"{action.title()} failed. Check Docker Desktop and docker-compose.yml.",
+            )
         else:
-            from tkinter import messagebox
             messagebox.showinfo("Docker", f"{action.title()} OK.")
+

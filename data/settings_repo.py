@@ -1,14 +1,7 @@
-import json, os
-from .paths import base_path
+from data import config_repo
 
-SETTINGS_FILE = base_path("settings.json")
+def get(key, default=None):
+    return config_repo.get_setting(key, default)
 
-def load():
-    if os.path.exists(SETTINGS_FILE):
-        with open(SETTINGS_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save(data):
-    with open(SETTINGS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+def set(key, value):
+    return config_repo.set_setting(key, value)

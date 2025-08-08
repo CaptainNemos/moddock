@@ -1,14 +1,7 @@
-import json, os
-from .paths import base_path
-
-MODS_JSON = base_path("installed_mods.json")
+from data import config_repo
 
 def load():
-    if os.path.exists(MODS_JSON):
-        with open(MODS_JSON, "r") as f:
-            return json.load(f)
-    return []
+    return config_repo.get_mods()
 
 def save(mods):
-    with open(MODS_JSON, "w") as f:
-        json.dump(mods, f, indent=2)
+    return config_repo.set_mods(mods)
