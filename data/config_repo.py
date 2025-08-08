@@ -1,108 +1,151 @@
 import json
 import os
+from typing import Dict, Any
 from data.paths import base_path
 
 CONFIG_FILE = base_path("moddock_config.json")
 
-_default_config = {
+_default_config: Dict[str, Any] = {
     "settings": {
         "last_view": "simple",
         "steam_user": "",
-        "steam_password_enc": ""
+        "steam_password_saved": False,
     },
-    "mods": []
+    # store mods as dict keyed by string id
+    "mods": {}
 }
 
-def _load():
-    
-    # Migration
-    old_mods_file = base_path("installed_mods.json")
-    old_settings_file = base_path("settings.json")
-    migrated = False
-    if os.path.exists(old_mods_file) or os.path.exists(old_settings_file):
-        data = _default_config.copy()
-        if os.path.exists(old_settings_file):
+def _read_file(path: str) -> Any:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def _write_file(path: str, data: Any) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+def _ensure_defaults(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    merged = {
+        "settings": {**_default_config["settings"], **cfg.get("settings", {})},
+        "mods": cfg.get("mods", {})
+    }
+    # normalize mods to dict if it came in as a list
+    if isinstance(merged["mods"], list):
+        merged["mods"] = {str(m.get("id")): m for m in merged["mods"] if isinstance(m, dict) and "id" in m}
+    # ensure string keys
+    if isinstance(merged["mods"], dict):
+        merged["mods"] = {str(k): v for k, v in merged["mods"].items()}
+    return merged
+
+def _load_cfg() -> Dict[str, Any]:
+    # First-run migration from old files if present
+    old_mods = base_path("installed_mods.json")
+    old_settings = base_path("settings.json")
+    if not os.path.exists(CONFIG_FILE) and (os.path.exists(old_mods) or os.path.exists(old_settings)):
+        cfg = _default_config.copy()
+        # migrate settings
+        if os.path.exists(old_settings):
             try:
-                with open(old_settings_file, "r", encoding="utf-8") as f:
-                    data["settings"].update(json.load(f))
-            except:
+                s = _read_file(old_settings)
+                if isinstance(s, dict):
+                    cfg["settings"].update(s)
+            except Exception:
                 pass
-        if os.path.exists(old_mods_file):
+        # migrate mods (list or dict)
+        if os.path.exists(old_mods):
             try:
-                with open(old_mods_file, "r", encoding="utf-8") as f:
-                    data["mods"] = json.load(f)
-            except:
+                m = _read_file(old_mods)
+                if isinstance(m, list):
+                    cfg["mods"] = {str(it.get("id")): it for it in m if isinstance(it, dict) and "id" in it}
+                elif isinstance(m, dict):
+                    cfg["mods"] = {str(k): v for k, v in m.items()}
+            except Exception:
                 pass
-        _save(data)
-        for p in [old_mods_file, old_settings_file]:
-            try: os.remove(p)
-            except: pass
-        return data
-    
-    if not os.path.exists(CONFIG_FILE):
-        return _default_config.copy()
-    try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # merge defaults in case new keys were added
-        merged = _default_config.copy()
-        merged["settings"] = {**_default_config["settings"], **data.get("settings", {})}
-        merged["mods"] = data.get("mods", [])
-        return merged
-    except Exception as e:
-        print(f"[config_repo] Failed to load config: {e}")
+        _write_file(CONFIG_FILE, cfg)
+        # don't delete old files automatically—user can keep as backup
+        return cfg
+
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cfg = _read_file(CONFIG_FILE)
+            return _ensure_defaults(cfg)
+        except Exception:
+            # fallback to defaults on read error
+            return _default_config.copy()
+    else:
         return _default_config.copy()
 
-def _save(data):
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        print(f"[config_repo] Failed to save config: {e}")
+def _save_cfg(cfg: Dict[str, Any]) -> None:
+    # ensure directory exists (usually root, but just in case)
+    os.makedirs(os.path.dirname(CONFIG_FILE) or ".", exist_ok=True)
+    _write_file(CONFIG_FILE, cfg)
 
-# Settings
-def get_setting(key, default=None):
-    cfg = _load()
-        # Sync with filesystem
-    mods_dir = base_path("mods")
-    os.makedirs(mods_dir, exist_ok=True)
-    fs_mods = [d for d in os.listdir(mods_dir) if os.path.isdir(os.path.join(mods_dir, d)) and d.startswith("@")]
+# ------------- Settings API -------------
 
-    # Map by id
-    mods_by_id = {m["id"]: m for m in cfg["mods"]}
-    for folder in fs_mods:
-        mod_id = folder.lstrip("@")
-        if mod_id in mods_by_id:
-            if mods_by_id[mod_id].get("status") != "downloaded":
-                mods_by_id[mod_id]["status"] = "downloaded"
-        else:
-            mods_by_id[mod_id] = {
-                "id": mod_id,
-                "name": f"Mod {mod_id}",
-                "status": "downloaded",
-                "enabled": True
-            }
-    # Mark missing
-    for mod_id in list(mods_by_id.keys()):
-        if f"@{mod_id}" not in fs_mods and mods_by_id[mod_id]["status"] == "downloaded":
-            mods_by_id[mod_id]["status"] = "missing"
-
-    cfg["mods"] = list(mods_by_id.values())
-    _save(cfg)
-
+def get_setting(key: str, default=None):
+    cfg = _load_cfg()
     return cfg["settings"].get(key, default)
 
-def set_setting(key, value):
-    cfg = _load()
+def set_setting(key: str, value) -> None:
+    cfg = _load_cfg()
     cfg["settings"][key] = value
-    _save(cfg)
+    _save_cfg(cfg)
 
-# Mods
-def get_mods():
-    cfg = _load()
-    return cfg["mods"]
+# ------------- Mods API -------------
 
-def set_mods(mods):
-    cfg = _load()
+def get_mods() -> Dict[str, Dict[str, Any]]:
+    """
+    Return mods as a dict keyed by string mod_id.
+    Also performs a light filesystem sync with ./mods/@<id> directories:
+      - mark existing folders as 'downloaded'
+      - mark previously 'downloaded' but missing folders as 'missing'
+    """
+    cfg = _load_cfg()
+    mods: Dict[str, Dict[str, Any]] = cfg.get("mods", {})
+    if not isinstance(mods, dict):
+        # normalize if file was edited manually
+        if isinstance(mods, list):
+            mods = {str(m.get("id")): m for m in mods if isinstance(m, dict) and "id" in m}
+        else:
+            mods = {}
+
+    # filesystem sync
+    mods_dir = base_path("mods")
+    os.makedirs(mods_dir, exist_ok=True)
+    fs_mods = set()
+    try:
+        for entry in os.listdir(mods_dir):
+            full = os.path.join(mods_dir, entry)
+            if os.path.isdir(full) and entry.startswith("@"):
+                fs_mods.add(entry[1:])  # strip '@'
+    except Exception:
+        pass
+
+    # mark downloaded
+    for mid in fs_mods:
+        mid = str(mid)
+        if mid not in mods:
+            mods[mid] = {"id": mid, "name": f"Mod {mid}", "enabled": True, "status": "downloaded", "source": "steam"}
+        else:
+            if mods[mid].get("status") != "downloaded":
+                mods[mid]["status"] = "downloaded"
+
+    # mark missing if previously downloaded but folder gone
+    for mid, m in list(mods.items()):
+        if m.get("status") == "downloaded" and str(mid) not in fs_mods:
+            m["status"] = "missing"
+
     cfg["mods"] = mods
-    _save(cfg)
+    _save_cfg(cfg)
+    return mods
+
+def set_mods(mods: Dict[str, Dict[str, Any]]) -> None:
+    # normalize keys to strings
+    if isinstance(mods, dict):
+        mods = {str(k): v for k, v in mods.items()}
+    elif isinstance(mods, list):
+        mods = {str(m.get("id")): m for m in mods if isinstance(m, dict) and "id" in m}
+    else:
+        mods = {}
+    cfg = _load_cfg()
+    cfg["mods"] = mods
+    _save_cfg(cfg)

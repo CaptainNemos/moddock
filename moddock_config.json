@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "last_view": "simple",
+    "steam_user": "delas1",
+    "steam_password_saved": true,
+    "steam_password_enc": ""
+  },
+  "mods": {
+    "450814997": {
+      "id": "450814997",
+      "name": "Mod 450814997",
+      "status": "downloaded",
+      "source": "steam",
+      "enabled": true
+    }
+  }
+}
