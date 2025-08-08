@@ -1,95 +1,79 @@
 # ModDock Server Manager
 
-🛠️ **Game Server Mod & Config Manager for Docker-based Game Servers**
+**Fast, simple, and powerful management for Docker-based game servers.**
 
-ModDock is an open-source desktop tool designed to make hosting **Docker-based game servers** as easy — or as advanced — as you want.
-
-- **Simple Mode:** Minimal setup for a quick start.
-- **Advanced Mode:** Full customization for experienced server admins.
-- **Multi-Game Ready:** Currently optimized for **ARMA 3**, but designed to support any moddable game with a Docker server.
-- **Mod Management Built In:** Download, update, enable, and disable mods directly from Steam Workshop.
+ModDock is an open-source desktop tool that takes the hassle out of running dedicated game servers in Docker.  
+Whether you want a quick setup for friends or full control over every detail, ModDock gives you both.
 
 ---
 
-## 🐳 Built for Docker-powered game hosting
-Whether you're self-hosting or managing a community server, ModDock automates the busywork so you can get back to playing.
+## 🚀 Why ModDock?
+
+Server admins care about three things:
+1. **Speed** – get a server online in minutes, not hours.
+2. **Control** – tweak every setting when you need to.
+3. **Portability** – take your setup anywhere.
+
+ModDock is built around those needs.
 
 ---
 
-## ✨ Features
-- 🔀 Toggle between **Simple** and **Advanced** interface modes
-- 📦 Add Steam Workshop mods (single or multiple IDs)
-- 🔍 Fetch mod names from Steam automatically
-- 📁 Organized folder structure for mods and profiles
-- 🔄 Auto-generate `installed_mods.json` if missing
-- 🧠 Remembers previously used mode and layout
-- 🛢️ Designed specifically for Docker-based game server setups
-- 📌 Paths and resources work in both `.py` and `.exe` modes
+## ⚡ Core Features
+
+- **Docker-native server control** – start, stop, and restart dedicated servers directly from the desktop.
+- **Unified configuration file** – all server settings, installed mods, and preferences in one portable JSON.
+- **Integrated mod management** – add, enable, and disable Steam Workshop mods without touching the filesystem.
+- **Simple & Advanced modes** – one-click style setup or full manual control, in the same app.
+- **Game-agnostic architecture** – currently optimized for ARMA 3, designed to work with any moddable Docker server.
 
 ---
 
-### Docker Controls (since 0.3.1-alpha)
-- Start/Stop/Restart now run `docker compose` directly from the app (Windows 11 + Docker Desktop supported).
-- Requires a `docker-compose.yml` in the project folder. *(Autogeneration is planned next.)*
+## 📦 How It Helps You
 
----
+### **Speed**
+- Skip manual Docker commands.
+- Simple mode for quick deployment.
 
-## 🚀 New in v0.3.4-alpha
+### **Control**
+- Advanced mode for full server customization.
+- Manage mod loadouts without re-downloading.
 
-### Unified Configuration
-All app settings — including installed mods — are now stored in a single file:
-```
-moddock_config.json
-```
-Benefits:
-- One file to back up or share  
-- Simpler export/import of server profiles and modlists (future-ready)  
-- No more juggling separate settings and mods repositories
+### **Portability**
+- One JSON file to back up or share.
+- Docker ensures the server runs identically anywhere.
 
----
-
-### Secure Steam Credentials
-The **Mods** tab now includes a credentials section:
-- **Username**: stored in `moddock_config.json`
-- **Password**: stored securely in **Windows Credential Manager** via [`keyring`](https://pypi.org/project/keyring/) — never saved to JSON
-- **Show/Hide** toggle for the password field
-- **Remember** checkbox to store password securely
-- **Save** button to update credentials instantly
-
-If no username is provided, ModDock defaults to anonymous login for SteamCMD.
-
----
-
-### Mods List Improvements
-- Enable/disable mods via checkboxes (double-click a row to toggle)
-- **Add Mods** button accepts one or multiple Steam Workshop IDs
-- Status column displays download results (`downloaded`, `error`, etc.)
-
----
-
-## 🚧 Roadmap / Vision
-- 🖱 **One-Click Server Setup** — fully automated deployment from zero to running in a single action.
-- ⚙️ In-app editing for `server.cfg` and other configs (simple + raw modes)
-- 🐳 Auto-generate and manage `docker-compose.yml` from within the app
-- 📚 Steam Collection import for bulk mod installation
-- 🧩 Game profile system with per-game UI (ARMA 3, Palworld, Valheim, etc.)
-- 🧠 Save/load config presets
-- 🧪 Plugin support for future games
+### **Versatility**
+- ARMA 3 ready.
+- Expandable to any game with a Docker server image.
 
 ---
 
 ## 🛠 Development / Building
-From the project root (`moddock` folder):
+
+From the `moddock` folder:
 
 ```powershell
-pyinstaller main.py `
-  --name "ModDock" `
-  --windowed `
-  --icon "media/moddock_logo.ico" `
-  --add-data "media;media" `
-  --add-data "profiles;profiles" `
-  --add-data "mods;mods"
+pip install -r requirements.txt
+pyinstaller moddock.spec
 ```
+
+The built app will be in:
+```
+dist/ModDock/ModDock.exe
+```
+
+Run in development mode:
+```powershell
+python main.py
+```
+
+---
+
+## 🗺 Roadmap / Vision
+- 🖱 **One-Click Server Setup** – zero to running in a single click.
+- 📚 Modlist/profile export & import.
+- 🧩 Game profile system with per-game UI.
+- 🐳 Auto-generate `docker-compose.yml` from the app.
 
 ---
 
