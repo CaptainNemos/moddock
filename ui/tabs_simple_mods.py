@@ -12,7 +12,7 @@ KEYRING_SERVICE = "moddock-steam"  # Windows Credential Manager entry
 class ModsTab(tk.Frame):
     def __init__(self, master, mods, on_compose_action):
         super().__init__(master)
-        self.mods = mods
+        self.mods = mods if isinstance(mods, dict) else {}
         self._build()
 
     # ---------- UI ----------
@@ -37,26 +37,34 @@ class ModsTab(tk.Frame):
         tk.Checkbutton(creds, text="Remember (securely)", variable=self.var_remember).grid(row=1, column=1, sticky="w", pady=(0,8))
         tk.Button(creds, text="Save", command=self._save_creds).grid(row=1, column=3, sticky="e", pady=(0,8))
 
-        # Populate password field if saved
+        # Load saved password if present
         self._load_saved_password_into_field()
 
         # Mods table
         tk.Label(self, text="Installed Mods:", font=("Arial", 12)).pack(pady=(6,0))
 
-        columns = ("name", "id", "status")
+        columns = ("enabled", "name", "id", "status")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", selectmode="extended", height=12)
+        self.tree.heading("enabled", text="✓")
         self.tree.heading("name", text="Name")
         self.tree.heading("id", text="Workshop ID")
         self.tree.heading("status", text="Status")
-        self.tree.column("name", width=300)
+
+        self.tree.column("enabled", width=40, anchor="center", stretch=False)
+        self.tree.column("name", width=300, anchor="w")
         self.tree.column("id", width=120, anchor="center")
-        self.tree.column("status", width=100, anchor="center")
+        self.tree.column("status", width=120, anchor="center")
+
         self.tree.pack(pady=5, fill="x", padx=8)
-        self.tree.bind("<Double-1>", self._toggle_click)
+
+        self.tree.bind("<Button-1>", self._on_click_enabled_col)
+        self.tree.bind("<Double-1>", self._toggle_double_click)
 
         # Action row
         row = tk.Frame(self); row.pack(pady=8)
         tk.Button(row, text="Add Mods", command=self._add_mods).pack(side="left", padx=5)
+        tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
+        tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
         tk.Button(row, text="Download Selected (SteamCMD)", command=self._download_selected).pack(side="left", padx=5)
 
         self._refresh_mods()
@@ -75,14 +83,12 @@ class ModsTab(tk.Frame):
                     if saved:
                         self.var_pass.set(saved)
                 except Exception:
-                    pass  # keyring not available or other issue
+                    pass
 
     def _save_creds(self):
         user = self.var_user.get().strip()
         pwd = self.var_pass.get()
-        # save username in JSON
         config_repo.set_setting("steam_user", user)
-        # handle password save/remove
         if self.var_remember.get() and user and pwd:
             try:
                 keyring.set_password(KEYRING_SERVICE, user, pwd)
@@ -91,7 +97,6 @@ class ModsTab(tk.Frame):
             except Exception as e:
                 messagebox.showerror("Settings", f"Failed to save password to keyring: {e}")
         else:
-            # Unset flag; optionally clear stored password
             config_repo.set_setting("steam_password_saved", False)
             try:
                 if user:
@@ -101,58 +106,81 @@ class ModsTab(tk.Frame):
             messagebox.showinfo("Settings", "Credentials updated (password not stored).")
 
     def _resolve_creds_for_download(self):
-        """
-        Return (user, pass) to use for SteamCMD.
-        If Remember is on and password is empty in the field, attempt to pull from keyring.
-        If user is empty, we'll use anonymous login.
-        """
         user = self.var_user.get().strip()
         pwd = self.var_pass.get()
-
-        if self.var_remember.get():
-            if not pwd and user:
-                try:
-                    saved = keyring.get_password(KEYRING_SERVICE, user)
-                    if saved:
-                        pwd = saved
-                except Exception:
-                    pass
+        if self.var_remember.get() and not pwd and user:
+            try:
+                saved = keyring.get_password(KEYRING_SERVICE, user)
+                if saved:
+                    pwd = saved
+            except Exception:
+                pass
         return user, pwd
 
     # ---------- Mods table ----------
     def _refresh_mods(self):
         self.tree.delete(*self.tree.get_children())
-        for idx, mod in enumerate(self.mods):
-            name = mod.get("name", f"Mod {mod['id']}")
+        for idx, (mod_id, mod) in enumerate(self.mods.items()):
+            enabled = mod.get("enabled", True)
+            name = mod.get("name", f"Mod {mod_id}")
             status = mod.get("status", "unknown")
-            display_name = f"[✓] {name}" if mod.get("enabled", True) else f"[ ] {name}"
-            self.tree.insert("", "end", iid=str(idx), values=(display_name, mod["id"], status))
-
-    def _toggle_click(self, event):
-        item_id = self.tree.identify_row(event.y)
-        if not item_id:
-            return
-        idx = int(item_id)
-        self.mods[idx]["enabled"] = not self.mods[idx].get("enabled", True)
-        self._save_mods()
-        self._refresh_mods()
+            checkbox = "☑" if enabled else "☐"
+            self.tree.insert("", "end", iid=mod_id, values=(checkbox, name, mod_id, status))
 
     def _save_mods(self):
         config_repo.set_mods(self.mods)
 
-    def _selected_indices(self):
-        return [int(i) for i in self.tree.selection()]
+    def _selected_ids(self):
+        return [self.tree.item(iid)["values"][2] for iid in self.tree.selection()]
+
+    def _on_click_enabled_col(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+        col = self.tree.identify_column(event.x)
+        if col != "#1":
+            return
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+        self.mods[item_id]["enabled"] = not self.mods[item_id].get("enabled", True)
+        self._save_mods()
+        self._refresh_mods()
+
+    def _toggle_double_click(self, event):
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+        self.mods[item_id]["enabled"] = not self.mods[item_id].get("enabled", True)
+        self._save_mods()
+        self._refresh_mods()
+
+    def _bulk_set_enabled(self, value: bool):
+        ids = self._selected_ids()
+        if not ids:
+            messagebox.showinfo("Mods", "Select one or more mods first.")
+            return
+        for mod_id in ids:
+            self.mods[mod_id]["enabled"] = value
+        self._save_mods()
+        self._refresh_mods()
 
     def _add_mods(self):
         ids = simpledialog.askstring("Add Mods", "Enter Steam Workshop IDs (comma or space separated):")
         if not ids:
             return
-        raw = [p.strip() for chunk in ids.replace(",", " ").split(" ") for p in [chunk.strip()] if p.strip()]
+        raw = [p.strip() for chunk in ids.replace(",", " ").split(" ") if p.strip()]
         changed = False
         for mod_id in raw:
-            if any(m.get("id") == mod_id for m in self.mods):
+            if mod_id in self.mods:
                 continue
-            self.mods.append({"id": mod_id, "name": f"Mod {mod_id}", "status": "added", "source": "steam", "enabled": True})
+            self.mods[mod_id] = {
+                "id": mod_id,
+                "name": f"Mod {mod_id}",
+                "status": "added",
+                "source": "steam",
+                "enabled": True
+            }
             changed = True
         if changed:
             self._save_mods()
@@ -160,8 +188,8 @@ class ModsTab(tk.Frame):
 
     # ---------- Actions ----------
     def _download_selected(self):
-        idxs = self._selected_indices()
-        if not idxs:
+        ids = self._selected_ids()
+        if not ids:
             messagebox.showinfo("Download", "Select one or more mods first.")
             return
 
@@ -169,8 +197,7 @@ class ModsTab(tk.Frame):
         mods_dir = base_path("mods")
         os.makedirs(mods_dir, exist_ok=True)
         failures = []
-        for i in idxs:
-            mod_id = self.mods[i]["id"]
+        for mod_id in ids:
             code = steamcmd_service.download_mod(
                 mod_id=mod_id,
                 app_id=ARMA_APP_ID,
@@ -180,11 +207,11 @@ class ModsTab(tk.Frame):
                 use_docker=True
             )
             if code == 0:
-                self.mods[i]["status"] = "downloaded"
+                self.mods[mod_id]["status"] = "downloaded"
                 os.makedirs(os.path.join(mods_dir, f"@{mod_id}"), exist_ok=True)
             else:
                 failures.append(mod_id)
-                self.mods[i]["status"] = f"error({code})"
+                self.mods[mod_id]["status"] = f"error({code})"
         self._save_mods()
         self._refresh_mods()
         if failures:
