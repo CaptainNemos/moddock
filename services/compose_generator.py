@@ -1,0 +1,3 @@
+# Placeholder for next step (v0.4.0 milestone)
+# Will generate docker-compose.yml from the active profile using PyYAML
+# def generate(profile: dict, dest_path: str) -> None: ...
