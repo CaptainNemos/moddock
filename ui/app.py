@@ -43,10 +43,15 @@ class ModDockApp(tk.Tk):
         settings_repo.save(self.settings)
 
     def _compose_action(self, action: str):
+        from data.paths import base_path
+        from services import docker_service
         fn = {"start": docker_service.start, "stop": docker_service.stop, "restart": docker_service.restart}.get(action)
-        if not fn: return
-        rc = fn(cwd=os.path.dirname(base_path()))
+        if not fn: 
+            return
+        rc = fn(cwd=base_path())  # run compose inside the app folder (where docker-compose.yml lives)
         if rc != 0:
-            messagebox.showerror("Docker", f"{action.title()} failed. Check Docker and docker-compose.yml.")
+            from tkinter import messagebox
+            messagebox.showerror("Docker", f"{action.title()} failed. Check Docker Desktop and docker-compose.yml.")
         else:
+            from tkinter import messagebox
             messagebox.showinfo("Docker", f"{action.title()} OK.")
