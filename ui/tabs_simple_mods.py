@@ -69,6 +69,8 @@ class ModsTab(tk.Frame):
         tk.Button(row, text="Add Mods", command=self._add_mods).pack(side="left", padx=5)
         tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
         tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
+        tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
+        tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
         tk.Button(row, text="Download Selected (SteamCMD)", command=self._download_selected).pack(side="left", padx=5)
 
         self._refresh_mods()
@@ -112,6 +114,13 @@ class ModsTab(tk.Frame):
     def _resolve_creds_for_download(self):
         user = self.var_user.get().strip()
         pwd = self.var_pass.get()
+        if self.var_remember.get() and not pwd and user:
+            try:
+                saved = keyring.get_password(KEYRING_SERVICE, user)
+                if saved:
+                    pwd = saved
+            except Exception:
+                pass
         if self.var_remember.get() and not pwd and user:
             try:
                 saved = keyring.get_password(KEYRING_SERVICE, user)

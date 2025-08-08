@@ -1,6 +1,7 @@
 {
   "settings": {
     "last_view": "simple",
+<<<<<<< HEAD
     "steam_user": "delas1",
     "steam_password_saved": true,
     "steam_password_enc": ""
@@ -14,4 +15,10 @@
       "enabled": true
     }
   }
+=======
+    "steam_user": "",
+    "steam_password_enc": ""
+  },
+  "mods": []
+>>>>>>> 4b3f32b2cab7d4e5d124d56e261b2af8c98c0a96
 }
