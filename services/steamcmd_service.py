@@ -12,7 +12,7 @@ def _abs(path: str) -> str:
     return os.path.abspath(path)
 
 def _session_dir() -> str:
-    """
+    r"""
     Cross-platform Steam session dir on host. This stores Steam Guard trust,
     so dockerized SteamCMD won't prompt every run.
     Windows: C:\Users\<you>\.moddock\steam
@@ -25,22 +25,29 @@ def _session_dir() -> str:
 def _run_and_stream(cmd, progress_cb=None) -> int:
     """
     Run a process and stream combined stdout/stderr lines.
-    Tries to parse '(NN%)' patterns to report numeric progress.
+    Parse either '(NN%)' or 'progress: NN(.MM)' and report % via progress_cb(int 0..100).
     """
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    percent_pat = re.compile(r"\((\d{1,3})%\)")
+
+    pct_paren = re.compile(r"\((\d{1,3})%\)")                       # e.g. "(37%)"
+    pct_word  = re.compile(r"progress:\s*([0-9]+(?:\.[0-9]+)?)", re.I)  # e.g. "progress: 12.34"
+
     for line in proc.stdout:
         line = line.rstrip()
-        # Uncomment for debug:
-        # print(line)
         if progress_cb:
-            m = percent_pat.search(line)
+            m = pct_paren.search(line) or pct_word.search(line)
             if m:
                 try:
-                    progress_cb(int(m.group(1)))
+                    val = float(m.group(1))
+                    # Clamp to 0..100 and round to int for UI
+                    val = max(0.0, min(100.0, val))
+                    progress_cb(int(round(val)))
                 except Exception:
                     pass
+        # (Optional) print(line)  # for debugging
+
     return proc.wait()
+
 
 def _merge_move(src: str, dst: str) -> bool:
     """
