@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 import os
@@ -14,8 +15,24 @@ KEYRING_SERVICE = "moddock-steam"  # Windows Credential Manager entry
 class ModsTab(tk.Frame):
     def __init__(self, master, mods, on_compose_action):
         super().__init__(master)
-        # Ensure dict[str, dict]
-        self.mods = mods if isinstance(mods, dict) else {}
+        # Normalize incoming mods to dict[str, dict]
+        if isinstance(mods, list):
+            mods_dict = {}
+            for m in mods:
+                if isinstance(m, dict) and "id" in m:
+                    mid = str(m["id"])
+                    m.setdefault("name", f"Mod {mid}")
+                    m.setdefault("enabled", True)
+                    m.setdefault("status", "unknown")
+                    m.setdefault("source", "steam")
+                    mods_dict[mid] = m
+            self.mods = mods_dict
+        elif isinstance(mods, dict):
+            self.mods = {str(k): (v if isinstance(v, dict) else {"id": str(k), "name": f"Mod {k}", "enabled": True, "status": str(v), "source": "steam"})
+                         for k, v in mods.items()}
+        else:
+            self.mods = {}
+
         self._build()
 
     # ---------- UI ----------
@@ -57,26 +74,9 @@ class ModsTab(tk.Frame):
         self.tree.column("name", width=300, anchor="w")
         self.tree.column("id", width=140, anchor="center")
         self.tree.column("status", width=140, anchor="center")
-
         self.tree.pack(pady=5, fill="x", padx=8)
 
         # Click in 'enabled' column toggles + selects row; double-click anywhere toggles too
-        self.tree.column("id", width=120, anchor="center")
-        self.tree.column("status", width=120, anchor="center")
-
-        self.tree.pack(pady=5, fill="x", padx=8)
-
-        # Click to toggle checkbox in the 'enabled' column; double-click anywhere also toggles
-        self.tree.column("id", width=120, anchor="center")
-        self.tree.column("status", width=120, anchor="center")
-
-        self.tree.pack(pady=5, fill="x", padx=8)
-
-        self.tree.column("id", width=120, anchor="center")
-        self.tree.column("status", width=120, anchor="center")
-
-        self.tree.pack(pady=5, fill="x", padx=8)
-
         self.tree.bind("<Button-1>", self._on_click_enabled_col)
         self.tree.bind("<Double-1>", self._toggle_double_click)
 
@@ -85,9 +85,8 @@ class ModsTab(tk.Frame):
         tk.Button(row, text="Add Mods", command=self._add_mods).pack(side="left", padx=5)
         tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
         tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
-        tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
-        tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
-        tk.Button(row, text="Download Selected (SteamCMD)", command=self._download_selected).pack(side="left", padx=5)
+        self.btn_download = tk.Button(row, text="Download Selected (SteamCMD)", command=self._download_selected)
+        self.btn_download.pack(side="left", padx=5)
 
         self._refresh_mods()
 
@@ -137,98 +136,25 @@ class ModsTab(tk.Frame):
                     pwd = saved
             except Exception:
                 pass
-        if self.var_remember.get() and not pwd and user:
-            try:
-                saved = keyring.get_password(KEYRING_SERVICE, user)
-                if saved:
-                    pwd = saved
-            except Exception:
-                pass
         return user, pwd
 
     # ---------- Mods table ----------
     def _refresh_mods(self):
         self.tree.delete(*self.tree.get_children())
         for mod_id, mod in self.mods.items():
-            # ensure string keys and fields
             mod_id = str(mod_id)
             enabled = bool(mod.get("enabled", True))
             name = mod.get("name", f"Mod {mod_id}")
             status = mod.get("status", "unknown")
             checkbox = "☑" if enabled else "☐"
             self.tree.insert("", "end", iid=mod_id, values=(checkbox, name, mod_id, status))
-        for idx, mod in enumerate(self.mods):
-            enabled = mod.get("enabled", True)
-            name = mod.get("name", f"Mod {mod['id']}")
-            status = mod.get("status", "unknown")
-            checkbox = "☑" if enabled else "☐"   # Unicode checkbox glyphs
-            self.tree.insert("", "end", iid=str(idx),
-                             values=(checkbox, name, mod["id"], status))
 
     def _save_mods(self):
         config_repo.set_mods(self.mods)
 
-    def _selected_indices(self):
-        return [int(i) for i in self.tree.selection()]
-
-    def _on_click_enabled_col(self, event):
-        # Only toggle when clicking in the 'enabled' column
-        region = self.tree.identify("region", event.x, event.y)
-        if region != "cell":
-            return
-        col = self.tree.identify_column(event.x)
-        if col != "#1":  # first column = 'enabled'
-            return
-        item_id = self.tree.identify_row(event.y)
-        if not item_id:
-            return
-        idx = int(item_id)
-        self.mods[idx]["enabled"] = not self.mods[idx].get("enabled", True)
-        self._save_mods()
-        self._refresh_mods()
-
-    def _toggle_double_click(self, event):
-        # Double-click anywhere on a row toggles enabled state
-        item_id = self.tree.identify_row(event.y)
-        if not item_id:
-            return
-        idx = int(item_id)
-        self.mods[idx]["enabled"] = not self.mods[idx].get("enabled", True)
-        self._save_mods()
-        self._refresh_mods()
-
     def _selected_ids(self):
         # return ID strings from selected rows
         return [str(self.tree.item(iid)["values"][2]) for iid in self.tree.selection()]
-        
-    def _toggle_double_click(self, event):
-        # Double-click anywhere on a row toggles enabled state
-        item_id = self.tree.identify_row(event.y)
-        if not item_id:
-            return
-        idx = int(item_id)
-        self.mods[idx]["enabled"] = not self.mods[idx].get("enabled", True)
-        self._save_mods()
-        self._refresh_mods()
-
-    def _bulk_set_enabled(self, value: bool):
-        idxs = self._selected_indices()
-        if not idxs:
-            messagebox.showinfo("Mods", "Select one or more mods first.")
-            return
-        for i in idxs:
-            self.mods[i]["enabled"] = value
-        self._save_mods()
-        self._refresh_mods()
-
-    def _add_mods(self):
-        ids = simpledialog.askstring("Add Mods", "Enter Steam Workshop IDs (comma or space separated):")
-        if not ids:
-            return
-        for i in idxs:
-            self.mods[i]["enabled"] = value
-        self._save_mods()
-        self._refresh_mods()
 
     def _on_click_enabled_col(self, event):
         region = self.tree.identify("region", event.x, event.y)
@@ -238,7 +164,7 @@ class ModsTab(tk.Frame):
         item_id = self.tree.identify_row(event.y)
         if not item_id:
             return
-        # Always select the row the user clicked on (more intuitive)
+        # Always select the row the user clicked on
         self.tree.selection_set(item_id)
 
         if col == "#1":  # first column = 'enabled'
@@ -246,20 +172,6 @@ class ModsTab(tk.Frame):
             if mod_id not in self.mods:
                 return
             self.mods[mod_id]["enabled"] = not bool(self.mods[mod_id].get("enabled", True))
-        raw = [p.strip() for chunk in ids.replace(",", " ").split(" ") for p in [chunk.strip()] if p.strip()]
-        changed = False
-        for mod_id in raw:
-            if any(m.get("id") == mod_id for m in self.mods):
-                continue
-            self.mods.append({
-                "id": mod_id,
-                "name": f"Mod {mod_id}",
-                "status": "added",
-                "source": "steam",
-                "enabled": True
-            })
-            changed = True
-        if changed:
             self._save_mods()
             self._refresh_mods()
 
@@ -331,7 +243,11 @@ class ModsTab(tk.Frame):
             messagebox.showinfo("Download", "Select one or more mods first.")
             return
 
-        # Disable download button if you want (optional)
+        # Optionally disable the button to prevent double-clicks
+        try:
+            self.btn_download.config(state="disabled")
+        except Exception:
+            pass
 
         def worker():
             user, pwd = self._resolve_creds_for_download()
@@ -344,12 +260,7 @@ class ModsTab(tk.Frame):
                     # Called from background thread; hop to UI thread
                     def ui_update():
                         if isinstance(progress, int):
-                            # percent update
                             self.mods[mid]["status"] = f"downloading {progress}%"
-                        else:
-                            # raw line if you ever want to log it; we keep it quiet
-                            if "ERROR!" in str(progress):
-                                self.mods[mid]["status"] = "error"
                         self._save_mods()
                         self._refresh_mods()
                     self.after(0, ui_update)
@@ -383,13 +294,16 @@ class ModsTab(tk.Frame):
                         pass
                 else:
                     failures.append(mod_id)
-                    # leave any last error text; otherwise set generic
                     if not str(self.mods[mod_id].get("status", "")).startswith("error"):
                         self.mods[mod_id]["status"] = f"error({code})"
 
             def finish():
                 self._save_mods()
                 self._refresh_mods()
+                try:
+                    self.btn_download.config(state="normal")
+                except Exception:
+                    pass
                 if failures:
                     messagebox.showerror("SteamCMD", f"Failed: {', '.join(failures)}")
                 else:
