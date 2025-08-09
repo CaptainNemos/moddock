@@ -56,12 +56,21 @@ class ModsTab(tk.Frame):
         self.tree.column("enabled", width=40, anchor="center", stretch=False)
         self.tree.column("name", width=300, anchor="w")
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         self.tree.column("id", width=140, anchor="center")
         self.tree.column("status", width=140, anchor="center")
 
         self.tree.pack(pady=5, fill="x", padx=8)
 
         # Click in 'enabled' column toggles + selects row; double-click anywhere toggles too
+=======
+        self.tree.column("id", width=120, anchor="center")
+        self.tree.column("status", width=120, anchor="center")
+
+        self.tree.pack(pady=5, fill="x", padx=8)
+
+        # Click to toggle checkbox in the 'enabled' column; double-click anywhere also toggles
+>>>>>>> Stashed changes
 =======
         self.tree.column("id", width=120, anchor="center")
         self.tree.column("status", width=120, anchor="center")
@@ -79,8 +88,11 @@ class ModsTab(tk.Frame):
         tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
         tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         tk.Button(row, text="Enable Selected", command=lambda: self._bulk_set_enabled(True)).pack(side="left", padx=5)
         tk.Button(row, text="Disable Selected", command=lambda: self._bulk_set_enabled(False)).pack(side="left", padx=5)
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         tk.Button(row, text="Download Selected (SteamCMD)", command=self._download_selected).pack(side="left", padx=5)
@@ -134,6 +146,7 @@ class ModsTab(tk.Frame):
             except Exception:
                 pass
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         if self.var_remember.get() and not pwd and user:
             try:
                 saved = keyring.get_password(KEYRING_SERVICE, user)
@@ -141,6 +154,8 @@ class ModsTab(tk.Frame):
                     pwd = saved
             except Exception:
                 pass
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         return user, pwd
@@ -180,6 +195,7 @@ class ModsTab(tk.Frame):
         col = self.tree.identify_column(event.x)
         if col != "#1":  # first column = 'enabled'
             return
+<<<<<<< Updated upstream
         item_id = self.tree.identify_row(event.y)
         if not item_id:
             return
@@ -191,6 +207,8 @@ class ModsTab(tk.Frame):
 
     def _toggle_double_click(self, event):
         # Double-click anywhere on a row toggles enabled state
+=======
+>>>>>>> Stashed changes
         item_id = self.tree.identify_row(event.y)
         if not item_id:
             return
@@ -200,14 +218,39 @@ class ModsTab(tk.Frame):
         self._refresh_mods()
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     def _selected_ids(self):
         # return ID strings from selected rows
         return [str(self.tree.item(iid)["values"][2]) for iid in self.tree.selection()]
 =======
+=======
+    def _toggle_double_click(self, event):
+        # Double-click anywhere on a row toggles enabled state
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+        idx = int(item_id)
+        self.mods[idx]["enabled"] = not self.mods[idx].get("enabled", True)
+        self._save_mods()
+        self._refresh_mods()
+
+>>>>>>> Stashed changes
     def _bulk_set_enabled(self, value: bool):
         idxs = self._selected_indices()
         if not idxs:
             messagebox.showinfo("Mods", "Select one or more mods first.")
+<<<<<<< Updated upstream
+=======
+            return
+        for i in idxs:
+            self.mods[i]["enabled"] = value
+        self._save_mods()
+        self._refresh_mods()
+
+    def _add_mods(self):
+        ids = simpledialog.askstring("Add Mods", "Enter Steam Workshop IDs (comma or space separated):")
+        if not ids:
+>>>>>>> Stashed changes
             return
         for i in idxs:
             self.mods[i]["enabled"] = value
